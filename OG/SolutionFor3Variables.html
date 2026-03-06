@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3x3 Gaussian Elimination Solver</title>
+  <style>
+    :root {
+      --bg: #f9f9fb;
+      --primary: #556ee6;
+      --accent: #7c8db5;
+      --text: #2b2b2b;
+      --card-bg: #ffffff;
+      --border: #e0e0e0;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      padding: 30px 40px;
+      max-width: 700px;
+      width: 100%;
+      border: 1px solid var(--border);
+    }
+
+    h2 {
+      text-align: center;
+      color: var(--primary);
+      margin-bottom: 20px;
+    }
+
+    .matrix-input {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    input[type="number"] {
+      width: 60px;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 16px;
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      display: block;
+      margin: 0 auto;
+    }
+
+    button:hover {
+      background-color: #3d50c5;
+    }
+
+    #output {
+      margin-top: 30px;
+      white-space: pre-wrap;
+      background: #f1f4ff;
+      border-left: 4px solid var(--primary);
+      padding: 15px 20px;
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 15px;
+      overflow-x: auto;
+    }
+
+    @media (max-width: 600px) {
+      input[type="number"] {
+        width: 50px;
+        font-size: 14px;
+      }
+
+      button {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>3x3 Gaussian Elimination Solver</h2>
+
+  <div class="matrix-input">
+    <div class="row">
+      <input type="number" id="a11">x +
+      <input type="number" id="a12">y +
+      <input type="number" id="a13">z =
+      <input type="number" id="a14">
+    </div>
+    <div class="row">
+      <input type="number" id="a21">x +
+      <input type="number" id="a22">y +
+      <input type="number" id="a23">z =
+      <input type="number" id="a24">
+    </div>
+    <div class="row">
+      <input type="number" id="a31">x +
+      <input type="number" id="a32">y +
+      <input type="number" id="a33">z =
+      <input type="number" id="a34">
+    </div>
+  </div>
+
+  <button onclick="solve()">Solve</button>
+
+  <div id="output"></div>
+</div>
+
+<script>
+function solve() {
+  let coeff = [
+    [val("a11"), val("a12"), val("a13"), val("a14")],
+    [val("a21"), val("a22"), val("a23"), val("a24")],
+    [val("a31"), val("a32"), val("a33"), val("a34")]
+  ];
+
+  let output = "Solving using Gaussian Elimination...\n\nInitial matrix:\n";
+  output += showMatrix(coeff);
+
+  if (coeff[0][0] !== 0) {
+    let divisor = coeff[0][0];
+    output += `\nR1 / ${divisor}\n`;
+    for (let j = 0; j < 4; j++) coeff[0][j] /= divisor;
+  }
+  output += showMatrix(coeff);
+
+  for (let i = 1; i < 3; i++) {
+    if (coeff[i][0] !== 0) {
+      let divisor = coeff[i][0];
+      output += `\nR${i+1} / ${divisor} - R1\n`;
+      for (let j = 0; j < 4; j++) {
+        coeff[i][j] = coeff[i][j] / divisor - coeff[0][j];
+      }
+    }
+  }
+  output += showMatrix(coeff);
+
+  if (coeff[1][1] !== 0) {
+    let divisor = coeff[1][1];
+    output += `\nR2 / ${divisor}\n`;
+    for (let j = 0; j < 4; j++) coeff[1][j] /= divisor;
+  }
+  output += showMatrix(coeff);
+
+  if (coeff[2][1] !== 0) {
+    let factor = coeff[2][1];
+    output += `\nR3 - (R2 * ${factor})\n`;
+    for (let j = 0; j < 4; j++) {
+      coeff[2][j] = coeff[2][j] - factor * coeff[1][j];
+    }
+  }
+  output += showMatrix(coeff);
+
+  if (coeff[2][2] !== 0) {
+    let divisor = coeff[2][2];
+    output += `\nR3 / ${divisor}\n`;
+    for (let j = 0; j < 4; j++) coeff[2][j] /= divisor;
+  }
+  output += showMatrix(coeff);
+
+  if (coeff[1][2] !== 0) {
+    let factor = coeff[1][2];
+    output += `\nR2 - (R3 * ${factor})\n`;
+    for (let j = 0; j < 4; j++) {
+      coeff[1][j] = coeff[1][j] - factor * coeff[2][j];
+    }
+  }
+
+  if (coeff[0][2] !== 0) {
+    let factor = coeff[0][2];
+    output += `\nR1 - (R3 * ${factor})\n`;
+    for (let j = 0; j < 4; j++) {
+      coeff[0][j] = coeff[0][j] - factor * coeff[2][j];
+    }
+  }
+
+  if (coeff[0][1] !== 0) {
+    let factor = coeff[0][1];
+    output += `\nR1 - (R2 * ${factor})\n`;
+    for (let j = 0; j < 4; j++) {
+      coeff[0][j] = coeff[0][j] - factor * coeff[1][j];
+    }
+  }
+
+  output += "\nFinal Reduced Matrix:\n" + showMatrix(coeff);
+  output += `\nSolution:\n x = ${coeff[0][3].toFixed(2)}\n y = ${coeff[1][3].toFixed(2)}\n z = ${coeff[2][3].toFixed(2)}\n`;
+
+  document.getElementById("output").innerText = output;
+}
+
+function val(id) {
+  return parseFloat(document.getElementById(id).value) || 0;
+}
+
+function showMatrix(matrix) {
+  return matrix.map(row => row.map(n => n.toFixed(2).padStart(7)).join(" ")).join("\n") + "\n";
+}
+</script>
+
+</body>
+</html>
