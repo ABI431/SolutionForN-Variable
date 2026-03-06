@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Solution for n Variables</title>
+
+<style>
+
+body{
+font-family:Segoe UI,sans-serif;
+background:linear-gradient(135deg,#6a85f1,#9b59b6);
+margin:0;
+padding:40px;
+display:flex;
+justify-content:center;
+}
+
+.container{
+width:900px;
+background:white;
+padding:35px;
+border-radius:12px;
+box-shadow:0 10px 30px rgba(0,0,0,0.2);
+}
+
+h1{
+text-align:center;
+color:#333;
+margin-bottom:20px;
+}
+
+input{
+padding:7px;
+width:65px;
+margin:4px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+button{
+background:#6a85f1;
+color:white;
+border:none;
+padding:10px 18px;
+border-radius:6px;
+cursor:pointer;
+margin-top:15px;
+margin-right:10px;
+}
+
+button:hover{
+background:#4c6ef5;
+}
+
+.equation{
+background:#f6f7ff;
+padding:10px;
+border-radius:6px;
+margin-top:10px;
+}
+
+.result{
+margin-top:25px;
+background:#eef1ff;
+padding:15px;
+border-radius:8px;
+}
+
+.solBox{
+display:inline-block;
+background:white;
+padding:12px 18px;
+margin:8px;
+border-radius:6px;
+box-shadow:0 2px 8px rgba(0,0,0,0.1);
+font-weight:600;
+}
+
+.matrixContainer{
+margin-top:20px;
+background:#f9fafc;
+padding:20px;
+border-radius:10px;
+}
+
+.matrix{
+border-collapse:collapse;
+margin:10px 0;
+font-family:monospace;
+}
+
+.matrix td{
+padding:6px 12px;
+text-align:center;
+}
+
+/* single augmented matrix separator */
+.matrix td.sep{
+border-left:3px solid #444;
+padding-left:15px;
+}
+
+.stepTitle{
+font-weight:600;
+margin-top:15px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Solution for n Variables</h1>
+
+<label>Enter Number of Variables:</label>
+<input id="varCount" type="number" min="2" max="10">
+<button onclick="createInputs()">Generate Equations</button>
+
+<div id="equations"></div>
+
+<div id="controls"></div>
+
+<div class="result" id="result"></div>
+
+<div class="matrixContainer" id="process" style="display:none"></div>
+
+</div>
+
+<script>
+
+let n
+let matrix=[]
+const vars="abcdefghijklmnopqrstuvwxyz"
+
+function createInputs(){
+
+n=parseInt(document.getElementById("varCount").value)
+
+let eqDiv=document.getElementById("equations")
+eqDiv.innerHTML=""
+
+for(let i=0;i<n;i++){
+
+let row=document.createElement("div")
+row.className="equation"
+
+row.innerHTML="<b>Equation "+(i+1)+"</b><br>"
+
+for(let j=0;j<n;j++){
+
+row.innerHTML+=vars[j]+" <input type='number' step='any' id='cell_"+i+"_"+j+"'> "
+
+}
+
+row.innerHTML+=" = <input type='number' step='any' id='cell_"+i+"_"+n+"'>"
+
+eqDiv.appendChild(row)
+
+}
+
+document.getElementById("controls").innerHTML=
+"<button onclick='solve()'>Solve</button>"
+
+}
+
+function readMatrix(){
+
+matrix=[]
+
+for(let i=0;i<n;i++){
+
+matrix[i]=[]
+
+for(let j=0;j<=n;j++){
+
+matrix[i][j]=parseFloat(document.getElementById("cell_"+i+"_"+j).value)||0
+
+}
+
+}
+
+}
+
+function matrixHTML(m){
+
+let html="<table class='matrix'>"
+
+for(let i=0;i<n;i++){
+
+html+="<tr>"
+
+for(let j=0;j<=n;j++){
+
+if(j==n){
+html+="<td class='sep'>"+m[i][j].toFixed(2)+"</td>"
+}
+else{
+html+="<td>"+m[i][j].toFixed(2)+"</td>"
+}
+
+}
+
+html+="</tr>"
+
+}
+
+html+="</table>"
+
+return html
+
+}
+
+function solve(){
+
+readMatrix()
+
+let m=JSON.parse(JSON.stringify(matrix))
+
+for(let i=0;i<n-1;i++){
+
+for(let j=i+1;j<n;j++){
+
+let r=m[j][i]/m[i][i]
+
+for(let k=0;k<=n;k++){
+
+m[j][k]-=r*m[i][k]
+
+}
+
+}
+
+}
+
+let x=new Array(n)
+
+x[n-1]=m[n-1][n]/m[n-1][n-1]
+
+for(let i=n-2;i>=0;i--){
+
+x[i]=m[i][n]
+
+for(let j=i+1;j<n;j++){
+
+x[i]-=m[i][j]*x[j]
+
+}
+
+x[i]/=m[i][i]
+
+}
+
+let html="<h3>Solutions</h3>"
+
+for(let i=0;i<n;i++){
+
+html+="<div class='solBox'>"+vars[i]+" = "+x[i].toFixed(4)+"</div>"
+
+}
+
+html+="<br><button onclick='showGaussian()'>Show Gaussian Elimination</button>"
+
+document.getElementById("result").innerHTML=html
+
+}
+
+function showGaussian(){
+
+readMatrix()
+
+let m=JSON.parse(JSON.stringify(matrix))
+
+let container=document.getElementById("process")
+container.style.display="block"
+
+let html="<h3>Gaussian Elimination Process</h3>"
+
+html+="<div class='stepTitle'>Initial Matrix</div>"
+html+=matrixHTML(m)
+
+for(let i=0;i<n;i++){
+
+let pivot=m[i][i]
+
+if(pivot!=1){
+
+html+="<div class='stepTitle'>R"+(i+1)+" / "+pivot.toFixed(2)+"</div>"
+
+for(let j=0;j<=n;j++){
+
+m[i][j]/=pivot
+
+}
+
+html+=matrixHTML(m)
+
+}
+
+for(let k=0;k<n;k++){
+
+if(k!=i){
+
+let factor=m[k][i]
+
+if(factor!=0){
+
+html+="<div class='stepTitle'>R"+(k+1)+" − R"+(i+1)+" × "+factor.toFixed(2)+"</div>"
+
+for(let j=0;j<=n;j++){
+
+m[k][j]-=factor*m[i][j]
+
+}
+
+html+=matrixHTML(m)
+
+}
+
+}
+
+}
+
+}
+
+container.innerHTML=html
+
+}
+
+</script>
+
+</body>
+</html>
